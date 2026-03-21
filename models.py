@@ -31,12 +31,37 @@ class RuneData:
         ]
         return RuneData(name=data["name"], strokes=strokes)
 
-    def serialise_strokes(self) -> list[tuple[Point, Point]]:
-        """Sorted stroke list for order-independent comparison."""
-        return sorted(self.strokes)
-
     def matches(self, other: RuneData) -> bool:
-        return self.serialise_strokes() == other.serialise_strokes()
+        """Compare runes by their strokes, order and endpoint direction independent.
+        Also normalizes stroke positions so attachment order doesn't matter."""
+        # Normalize strokes: ensure endpoints are consistently ordered and translate to canonical position
+        def normalize_strokes(strokes: list[Stroke]) -> set[Stroke]:
+            if not strokes:
+                return set()
+            
+            # Find bounding box
+            all_points = []
+            for p1, p2 in strokes:
+                all_points.extend([p1, p2])
+            
+            min_x = min(p[0] for p in all_points)
+            min_y = min(p[1] for p in all_points)
+            
+            # Normalize: translate to origin and ensure consistent point ordering
+            normalized = set()
+            for stroke in strokes:
+                p1, p2 = stroke
+                # Translate to canonical position
+                p1_norm = (p1[0] - min_x, p1[1] - min_y)
+                p2_norm = (p2[0] - min_x, p2[1] - min_y)
+                # Ensure consistent ordering of endpoints
+                if p1_norm <= p2_norm:
+                    normalized.add((p1_norm, p2_norm))
+                else:
+                    normalized.add((p2_norm, p1_norm))
+            return normalized
+        
+        return normalize_strokes(self.strokes) == normalize_strokes(other.strokes)
 
     # --- Operations ---
 

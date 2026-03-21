@@ -214,6 +214,7 @@ class LevelScene:
         self.rune_nodes.append(new_node)
         self.last_moved_node = new_node
         self._check_snap_all()
+        self._check_win()
 
     def _do_attach(self, a: RuneNode, b: RuneNode, direction: tuple[int, int]) -> None:
         attached_data = RuneData.attach(a.rune_data, b.rune_data, direction)
@@ -223,6 +224,7 @@ class LevelScene:
         self.rune_nodes.append(new_node)
         self.last_moved_node = new_node
         self._check_snap_all()
+        self._check_win()
 
     def _check_win(self) -> None:
         if not self.target_node:
@@ -404,9 +406,7 @@ class LevelScene:
         anchor, attached, direction = self.active_snap
         if key == pygame.K_m and self.level_data.allow_merge:
             self._do_merge(anchor, attached)
-            self._check_win()
             return
         if key == pygame.K_a and self.level_data.allow_attach and direction != (0, 0):
             self._do_attach(anchor, attached, direction)
-            self._check_win()
             return
