@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bdjkc28ab2bx2"]
+
+[ext_resource type="Script" uid="uid://bi0na48i0y1yh" path="res://scenes/rune_editor.gd" id="1_m1gr2"]
+
+[node name="RuneEditorNode" type="Node2D" unique_id=405934078]
+script = ExtResource("1_m1gr2")

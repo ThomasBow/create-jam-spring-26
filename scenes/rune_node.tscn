@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dine0un2adj0d"]
+
+[ext_resource type="Script" uid="uid://b4jn6i0ou5sci" path="res://scripts/rune_node.gd" id="1_ok6ff"]
+[ext_resource type="Script" uid="uid://c1ao1rx6aicr" path="res://scripts/rune_canvas.gd" id="2_yflwh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_138nd"]
+
+[node name="RuneNode" type="Node2D" unique_id=896391158]
+script = ExtResource("1_ok6ff")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1786141758]
+offset_right = 128.0
+offset_bottom = 128.0
+
+[node name="Canvas" type="Node2D" parent="." unique_id=1369063615]
+script = ExtResource("2_yflwh")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=987370050]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=2057645653]
+position = Vector2(128, 128)
+shape = SubResource("RectangleShape2D_138nd")
