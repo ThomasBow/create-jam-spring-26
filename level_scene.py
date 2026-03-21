@@ -14,6 +14,7 @@ TOP_MARGIN = 56
 BOTTOM_PANEL_H = 92
 EDGE_ANCHOR_COL = (100, 220, 140)
 EDGE_ATTACHED_COL = (220, 180, 90)
+MOVED_FOCUS_COL = (120, 170, 240)
 
 
 class LevelScene:
@@ -289,6 +290,9 @@ class LevelScene:
             node.draw(self.screen)
             node.draw_label(self.screen, self.font)
 
+        # Show which rune the snap solver is currently anchored to.
+        self._draw_last_moved_focus()
+
         # Keyboard hint for snapping runes and explicit edge preview.
         self._draw_attach_edge_preview()
         self._draw_snap_hints()
@@ -345,6 +349,22 @@ class LevelScene:
         pygame.draw.line(self.screen, SNAP_COLOUR, amid, bmid, 2)
         pygame.draw.circle(self.screen, EDGE_ANCHOR_COL, amid, 4)
         pygame.draw.circle(self.screen, EDGE_ATTACHED_COL, bmid, 4)
+
+    def _draw_last_moved_focus(self) -> None:
+        node = self.last_moved_node
+        if node is None or node not in self.rune_nodes:
+            return
+
+        phase = (pygame.time.get_ticks() // 110) % 8
+        pulse_w = 2 + (phase if phase <= 4 else 8 - phase)
+        rect = node.rect.inflate(10, 10)
+        pygame.draw.rect(
+            self.screen,
+            MOVED_FOCUS_COL,
+            rect,
+            pulse_w,
+            border_radius=10,
+        )
 
     def _draw_win(self) -> None:
         sw, sh = self.screen.get_size()
