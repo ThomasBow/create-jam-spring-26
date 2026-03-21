@@ -90,18 +90,22 @@ class RuneNode:
         self, others: list[RuneNode]
     ) -> tuple[RuneNode, tuple[int, int]] | None:
         """
-        Returns (other_rune, direction) if this rune is close enough
-        to snap to an edge of another rune. Direction is from self→other.
+        Returns (other_rune, direction) if this rune overlaps with another rune
+        (on top of it). Direction (0, 0) indicates a merge candidate.
         """
-        dirs: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        closest: tuple[RuneNode, float] | None = None
         for other in others:
             if other is self:
                 continue
-            for dx, dy in dirs:
-                target = other.position - pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
-                if (self.position - target).length() < SNAP_DIST:
-                    return (other, (dx, dy))
-        return None
+            # Check for rectangular overlap
+            if self.rect.colliderect(other.rect):
+                distance = (self.position - other.position).length()
+                if closest is None or distance < closest[1]:
+                    closest = (other, distance)
+        
+        if closest is None:
+            return None
+        return (closest[0], (0, 0))
 
     # ------------------------------------------------------------------ drawing
 

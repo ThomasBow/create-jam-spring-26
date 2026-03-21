@@ -140,7 +140,7 @@ class LevelScene:
     def _check_snap_all(self) -> None:
         """
         Find the best snap candidate across all rune pairs and highlight only that pair.
-        This avoids operation ambiguity and keeps attach direction stable.
+        Prioritizes merging when slabs overlap (on top of each other).
         """
         for node in self.rune_nodes:
             node.highlighted = False
@@ -151,37 +151,48 @@ class LevelScene:
             self.active_snap = None
             return
 
-        best_score: tuple[float, int] | None = None
+        best_score: tuple[float, int, int] | None = None
         best: tuple[RuneNode, RuneNode, tuple[int, int]] | None = None
-        dirs: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
+        # First priority: check for overlaps/merges (slabs on top of each other)
         for a in self.rune_nodes:
             if a is moved or a.dragging:
                 continue
             b = moved
-            for direction in dirs:
-                dx, dy = direction
-                expected_b = a.position + pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
-                error = (b.position - expected_b).length()
-                if error > SNAP_DIST:
-                    continue
-
-                # When equally close, prefer denser anchor rune to avoid direction flips.
-                complexity_pref = -len(a.rune_data.strokes)
-                score = (error, complexity_pref)
-                if best_score is None or score < best_score:
-                    best_score = score
-                    best = (a, b, direction)
-
-            # Allow merge if moved rune is intentionally stacked on top of another.
-            if self.level_data.allow_merge:
-                overlap_error = (b.position - a.position).length()
-                if overlap_error <= SNAP_DIST * 0.7:
+            
+            # Check if slabs overlap (rectangles collide)
+            if a.rect.colliderect(b.rect):
+                if self.level_data.allow_merge:
+                    overlap_distance = (b.position - a.position).length()
+                    # Prefer denser anchor rune to avoid direction flips.
                     complexity_pref = -len(a.rune_data.strokes)
-                    score = (overlap_error, complexity_pref)
+                    # Use priority 0 for merges (highest priority)
+                    score = (0, overlap_distance, complexity_pref)
                     if best_score is None or score < best_score:
                         best_score = score
                         best = (a, b, (0, 0))
+        
+        # Second priority: check for edge snapping (if no merge candidate found)
+        if best is None:
+            dirs: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            for a in self.rune_nodes:
+                if a is moved or a.dragging:
+                    continue
+                b = moved
+                for direction in dirs:
+                    dx, dy = direction
+                    expected_b = a.position + pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
+                    error = (b.position - expected_b).length()
+                    if error > SNAP_DIST:
+                        continue
+
+                    # Prefer denser anchor rune to avoid direction flips.
+                    complexity_pref = -len(a.rune_data.strokes)
+                    # Use priority 1 for edge snaps (lower priority than merges)
+                    score = (1, error, complexity_pref)
+                    if best_score is None or score < best_score:
+                        best_score = score
+                        best = (a, b, direction)
 
         self.active_snap = None
         if best is None:
