@@ -33,9 +33,9 @@ func _draw_strokes():
 		if stroke.size() < 2:
 			continue
 		# stroke points are normalized 0..1, scale to SLAB_SIZE
-		var a: Vector2 = stroke[0] * SLAB_SIZE
-		var b: Vector2 = stroke[1] * SLAB_SIZE
-		canvas.draw_line(a, b, Color.WHITE, 2.0, true)
+		var a: Vector2 = stroke[0]
+		var b: Vector2 = stroke[1]
+		canvas.draw_line(a, b, Color.WHITE, 10.0, true)
 
 func _on_input_event(_viewport, event: InputEvent, _shape_idx):
 	if event is InputEventMouseButton:

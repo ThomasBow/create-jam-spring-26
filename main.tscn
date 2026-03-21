@@ -1,16 +1,15 @@
 [gd_scene format=3 uid="uid://dyc81numcvqbn"]
 
-[ext_resource type="Script" uid="uid://b4jn6i0ou5sci" path="res://scripts/rune_node.gd" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://dine0un2adj0d" path="res://scenes/rune_node.tscn" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://becs50rqe122g" path="res://scripts/rune_data.gd" id="2_0xm2m"]
 
-[sub_resource type="Resource" id="Resource_h2yge"]
+[sub_resource type="Resource" id="Resource_0xm2m"]
 script = ExtResource("2_0xm2m")
-strokes = Array[PackedVector2Array]([PackedVector2Array(3, 3, 40, 40)])
+name = "Rune1"
+strokes = Array[PackedVector2Array]([PackedVector2Array(64, 8, 64, 120), PackedVector2Array(8, 120, 120, 8)])
 metadata/_custom_type_script = "uid://becs50rqe122g"
 
 [node name="Main" type="Node2D" unique_id=1364226627]
 
-[node name="RuneNode" type="Node2D" parent="." unique_id=411171355]
-script = ExtResource("1_ig7tw")
-rune_data = SubResource("Resource_h2yge")
-metadata/_custom_type_script = "uid://b4jn6i0ou5sci"
+[node name="RuneNode" parent="." unique_id=896391158 instance=ExtResource("1_ig7tw")]
+rune_data = SubResource("Resource_0xm2m")

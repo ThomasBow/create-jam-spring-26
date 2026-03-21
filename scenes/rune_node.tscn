@@ -11,6 +11,7 @@ script = ExtResource("1_ok6ff")
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1786141758]
 offset_right = 128.0
 offset_bottom = 128.0
+color = Color(0.07683582, 0.07683582, 0.07683582, 1)
 
 [node name="Canvas" type="Node2D" parent="." unique_id=1369063615]
 script = ExtResource("2_yflwh")
