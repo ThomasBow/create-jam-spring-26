@@ -76,6 +76,7 @@ class LevelData:
     target_rune: RuneData
     allow_merge: bool = True
     allow_attach: bool = True
+    tutorial_lines: list[str] = field(default_factory=list)
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -85,6 +86,7 @@ class LevelData:
                     "level_name": self.level_name,
                     "allow_merge": self.allow_merge,
                     "allow_attach": self.allow_attach,
+                    "tutorial_lines": self.tutorial_lines,
                     "starting_runes": [
                         {"name": r.name, "strokes": r.strokes}
                         for r in self.starting_runes
@@ -115,6 +117,7 @@ class LevelData:
             level_name=data["level_name"],
             allow_merge=data.get("allow_merge", True),
             allow_attach=data.get("allow_attach", True),
+            tutorial_lines=data.get("tutorial_lines", []),
             starting_runes=[parse_rune(r) for r in data["starting_runes"]],
             target_rune=parse_rune(data["target_rune"]),
         )

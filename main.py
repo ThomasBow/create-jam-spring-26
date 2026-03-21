@@ -4,13 +4,14 @@ Rune Game — main entry point
 Run with:  python main.py
 
 Controls:
-  Rune Editor (default start screen):
+    Rune Editor:
     Left click  — place stroke point (click twice = one stroke)
     Right click — cancel pending point
     M key       — merge two snapping runes
     A key       — attach two snapping runes
     E key       — toggle editor / level mode
     R key       — restart current level
+        N key       — next level (after victory)
 """
 
 from __future__ import annotations
@@ -18,48 +19,15 @@ import sys
 import pygame
 from pathlib import Path
 
-from models import RuneData, LevelData
 from rune_editor import RuneEditorScene
 from level_scene import LevelScene
+from levels import build_campaign_levels
 
 SCREEN_W = 720
 SCREEN_H = 500
 FPS = 60
 RUNE_DIR = Path("runes")
 LEVEL_DIR = Path("levels")
-
-
-def make_demo_level() -> LevelData:
-    """
-    A built-in starter level so the game is playable immediately
-    without needing to author runes first.
-    """
-    rune_a = RuneData(
-        name="alpha",
-        strokes=[
-            ((0.25, 0.25), (0.75, 0.25)),
-            ((0.25, 0.25), (0.5, 0.75)),
-            ((0.75, 0.25), (0.5, 0.75)),
-        ],
-    )
-    rune_b = RuneData(
-        name="beta",
-        strokes=[
-            ((0.5, 0.25), (0.5, 0.75)),
-            ((0.25, 0.5), (0.75, 0.5)),
-        ],
-    )
-    # Target = merge of both
-    target = RuneData.merge(rune_a, rune_b)
-    target.name = "alpha+beta"
-
-    return LevelData(
-        level_name="Tutorial — merge the runes",
-        starting_runes=[rune_a, rune_b],
-        target_rune=target,
-        allow_merge=True,
-        allow_attach=True,
-    )
 
 
 def main() -> None:
@@ -71,13 +39,29 @@ def main() -> None:
     RUNE_DIR.mkdir(exist_ok=True)
     LEVEL_DIR.mkdir(exist_ok=True)
 
-    # Start in the editor; press E to switch to the level
-    editor_scene = RuneEditorScene(screen, RUNE_DIR)
-    level_scene = LevelScene(screen, make_demo_level())
+    campaign_levels = build_campaign_levels()
+    level_idx = 0
 
-    mode: str = "editor"  # "editor" | "level"
+    # Start in level mode; press E to switch to editor.
+    editor_scene = RuneEditorScene(screen, RUNE_DIR)
+    level_scene = LevelScene(
+        screen,
+        campaign_levels[level_idx],
+        level_index=level_idx,
+        total_levels=len(campaign_levels),
+    )
+
+    mode: str = "level"  # "editor" | "level"
 
     font_small = pygame.font.SysFont("monospace", 12)
+
+    def load_level(index: int) -> LevelScene:
+        return LevelScene(
+            screen,
+            campaign_levels[index],
+            level_index=index,
+            total_levels=len(campaign_levels),
+        )
 
     running = True
     while running:
@@ -99,7 +83,11 @@ def main() -> None:
                 # Level-specific keys
                 if mode == "level":
                     if event.key == pygame.K_r:
-                        level_scene = LevelScene(screen, make_demo_level())
+                        level_scene = load_level(level_idx)
+                    elif event.key == pygame.K_n and level_scene.won:
+                        if level_idx + 1 < len(campaign_levels):
+                            level_idx += 1
+                            level_scene = load_level(level_idx)
                     else:
                         level_scene.handle_key(event.key)
 
@@ -117,7 +105,10 @@ def main() -> None:
 
         # Mode indicator
         mode_txt = font_small.render(
-            f"[E] {'→ Play level' if mode == 'editor' else '→ Editor'}   [ESC] Quit",
+            (
+                f"[E] {'-> Play level' if mode == 'editor' else '-> Editor'}"
+                f"   [ESC] Quit   Campaign {level_idx + 1}/{len(campaign_levels)}"
+            ),
             True,
             (80, 70, 50),
         )

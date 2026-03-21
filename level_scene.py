@@ -18,9 +18,17 @@ class LevelScene:
     Player merges / attaches runes to match the target.
     """
 
-    def __init__(self, screen: pygame.Surface, level_data: LevelData) -> None:
+    def __init__(
+        self,
+        screen: pygame.Surface,
+        level_data: LevelData,
+        level_index: int = 0,
+        total_levels: int = 1,
+    ) -> None:
         self.screen = screen
         self.level_data = level_data
+        self.level_index = level_index
+        self.total_levels = max(1, total_levels)
         self.font = pygame.font.SysFont("monospace", 14)
         self.big_font = pygame.font.SysFont("monospace", 20, bold=True)
 
@@ -93,6 +101,7 @@ class LevelScene:
         self.rune_nodes.remove(a)
         self.rune_nodes.remove(b)
         self.rune_nodes.append(new_node)
+        self._check_snap_all()
 
     def _do_attach(self, a: RuneNode, b: RuneNode, direction: tuple[int, int]) -> None:
         attached_data = RuneData.attach(a.rune_data, b.rune_data, direction)
@@ -100,6 +109,7 @@ class LevelScene:
         self.rune_nodes.remove(a)
         self.rune_nodes.remove(b)
         self.rune_nodes.append(new_node)
+        self._check_snap_all()
 
     def _check_win(self) -> None:
         if not self.target_node:
@@ -116,12 +126,19 @@ class LevelScene:
         self.screen.fill((10, 8, 6))
         sw, sh = self.screen.get_size()
 
+        # Subtle vertical gradient for depth.
+        for i in range(sh):
+            c = 10 + (i * 12) // max(1, sh)
+            pygame.draw.line(self.screen, (c, c - 2, c - 4), (0, i), (sw, i))
+
         # Header panel
         pygame.draw.rect(self.screen, PANEL_COL, pygame.Rect(0, 0, sw, 48))
         pygame.draw.line(self.screen, BORDER, (0, 48), (sw, 48), 1)
 
         title = self.big_font.render(
-            f"Level: {self.level_data.level_name}", True, (200, 180, 120)
+            f"Level {self.level_index + 1}/{self.total_levels}: {self.level_data.level_name}",
+            True,
+            (200, 180, 120),
         )
         self.screen.blit(title, (16, 12))
 
@@ -130,6 +147,8 @@ class LevelScene:
             ops.append("M: Merge")
         if self.level_data.allow_attach:
             ops.append("A: Attach")
+        ops.append("R: Restart")
+        ops.append("E: Editor")
         ops_txt = self.font.render("  |  ".join(ops), True, (110, 100, 70))
         self.screen.blit(ops_txt, (sw - ops_txt.get_width() - 16, 16))
 
@@ -148,6 +167,26 @@ class LevelScene:
             (sw - SLAB_SIZE - 80, sh),
             1,
         )
+
+        # Tutorial / objective panel
+        panel_x = 12
+        panel_y = 58
+        panel_w = sw - SLAB_SIZE - 110 - panel_x
+        panel_h = 82
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        pygame.draw.rect(self.screen, (22, 18, 12), panel_rect, border_radius=8)
+        pygame.draw.rect(self.screen, BORDER, panel_rect, 1, border_radius=8)
+        if self.level_data.tutorial_lines:
+            for i, line in enumerate(self.level_data.tutorial_lines[:3]):
+                line_txt = self.font.render(f"- {line}", True, (165, 145, 98))
+                self.screen.blit(line_txt, (panel_x + 10, panel_y + 8 + i * 22))
+        else:
+            line_txt = self.font.render(
+                "Align rune edges to highlight then press the operation key.",
+                True,
+                (165, 145, 98),
+            )
+            self.screen.blit(line_txt, (panel_x + 10, panel_y + 28))
 
         # Snap indicators — draw lines between snapping pairs
         for node in self.rune_nodes:
@@ -197,11 +236,13 @@ class LevelScene:
         overlay.fill((0, 0, 0, 140))
         self.screen.blit(overlay, (0, 0))
 
-        win_txt = self.big_font.render("✦  Rune complete!  ✦", True, WIN_COL)
+        win_txt = self.big_font.render("Rune complete!", True, WIN_COL)
         self.screen.blit(win_txt, win_txt.get_rect(center=(sw // 2, sh // 2)))
-        sub = self.font.render(
-            "Press R to restart  |  N for next level", True, (160, 200, 160)
-        )
+        if self.level_index + 1 < self.total_levels:
+            sub_msg = "Press N for next level  |  R to replay"
+        else:
+            sub_msg = "Campaign complete! Press R to replay this level"
+        sub = self.font.render(sub_msg, True, (160, 200, 160))
         self.screen.blit(sub, sub.get_rect(center=(sw // 2, sh // 2 + 36)))
 
     # ------------------------------------------------------------------ keyboard actions
