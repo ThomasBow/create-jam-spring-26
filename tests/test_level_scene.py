@@ -21,17 +21,17 @@ class LevelSceneSnapTests(unittest.TestCase):
         pygame.quit()
 
     def _make_scene(self) -> LevelScene:
-        a = RuneData("a", [((0.0, 0.0), (1.0, 0.0)), ((0.5, 0.0), (0.5, 1.0))])
-        b = RuneData("b", [((0.0, 0.0), (1.0, 1.0))])
+        a = RuneData("a", [((0, 0), (100, 0)), ((50, 0), (50, 100))])
+        b = RuneData("b", [((0, 0), (100, 100))])
         level = LevelData("test", [a, b], target_rune=RuneData.merge(a, b))
         return LevelScene(pygame.Surface((720, 500)), level)
 
     def test_snap_prefers_recently_moved_rune_as_attached(self) -> None:
         scene = self._make_scene()
 
-        anchor = RuneNode(RuneData("combo", [((0.0, 0.0), (1.0, 0.0)), ((0.0, 0.5), (1.0, 0.5))]), (200, 200))
+        anchor = RuneNode(RuneData("combo", [((0, 0), (100, 0)), ((0, 50), (100, 50))]), (200, 200))
         # Position moved below anchor without overlap, so it detects bottom attach
-        moved = RuneNode(RuneData("gamma", [((0.0, 0.0), (1.0, 1.0))]), (200, 200 + SLAB_SIZE))
+        moved = RuneNode(RuneData("gamma", [((0, 0), (100, 100))]), (200, 200 + SLAB_SIZE))
         scene.rune_nodes = [anchor, moved]
         scene.last_moved_node = moved
 
@@ -46,9 +46,9 @@ class LevelSceneSnapTests(unittest.TestCase):
     def test_snap_detects_left_side_without_direction_bias(self) -> None:
         scene = self._make_scene()
 
-        anchor = RuneNode(RuneData("anchor", [((0.0, 0.0), (1.0, 0.0))]), (300, 220))
+        anchor = RuneNode(RuneData("anchor", [((0, 0), (100, 0))]), (300, 220))
         # Position moved to the left of anchor without overlap, so it detects left attach
-        moved = RuneNode(RuneData("moved", [((0.0, 0.0), (1.0, 1.0))]), (300 - SLAB_SIZE, 220))
+        moved = RuneNode(RuneData("moved", [((0, 0), (100, 100))]), (300 - SLAB_SIZE, 220))
         scene.rune_nodes = [anchor, moved]
         scene.last_moved_node = moved
 
@@ -61,9 +61,9 @@ class LevelSceneSnapTests(unittest.TestCase):
     def test_overlap_enables_merge_candidate(self) -> None:
         scene = self._make_scene()
 
-        anchor = RuneNode(RuneData("anchor", [((0.0, 0.0), (1.0, 0.0))]), (280, 240))
+        anchor = RuneNode(RuneData("anchor", [((0, 0), (100, 0))]), (280, 240))
         moved = RuneNode(
-            RuneData("moved", [((0.0, 0.0), (1.0, 1.0))]),
+            RuneData("moved", [((0, 0), (100, 100))]),
             (284, 244),
         )
         scene.rune_nodes = [anchor, moved]
@@ -86,9 +86,9 @@ class LevelSceneSnapTests(unittest.TestCase):
         scene = self._make_scene()
 
         # a and b are close to each other, but c is the last moved rune.
-        a = RuneNode(RuneData("a", [((0.0, 0.0), (1.0, 0.0))]), (140, 140))
-        b = RuneNode(RuneData("b", [((0.0, 0.0), (1.0, 1.0))]), (140 + SLAB_SIZE - 6, 140))
-        c = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (360, 320))
+        a = RuneNode(RuneData("a", [((0, 0), (100, 0))]), (140, 140))
+        b = RuneNode(RuneData("b", [((0, 0), (100, 100))]), (140 + SLAB_SIZE - 6, 140))
+        c = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (360, 320))
 
         scene.rune_nodes = [a, b, c]
         scene.last_moved_node = c
@@ -104,13 +104,13 @@ class LevelSceneSnapTests(unittest.TestCase):
         scene = self._make_scene()
 
         # Create a merged composite rune
-        a_data = RuneData("a", [((0.0, 0.0), (0.5, 0.5))])
-        b_data = RuneData("b", [((0.5, 0.5), (1.0, 1.0))])
+        a_data = RuneData("a", [((0, 0), (50, 50))])
+        b_data = RuneData("b", [((50, 50), (100, 100))])
         merged_data = RuneData.merge(a_data, b_data)
         
         # Create scene with merged composite and a single rune nearby
         merged_node = RuneNode(merged_data, (200, 200))
-        c_node = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (200, 200 + SLAB_SIZE))
+        c_node = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (200, 200 + SLAB_SIZE))
         
         scene.rune_nodes = [merged_node, c_node]
         scene.last_moved_node = c_node
@@ -134,13 +134,13 @@ class LevelSceneSnapTests(unittest.TestCase):
         scene = self._make_scene()
 
         # Create a merged composite rune
-        a_data = RuneData("a", [((0.0, 0.0), (0.5, 0.5))])
-        b_data = RuneData("b", [((0.5, 0.5), (1.0, 1.0))])
+        a_data = RuneData("a", [((0, 0), (50, 50))])
+        b_data = RuneData("b", [((50, 50), (100, 100))])
         merged_data = RuneData.merge(a_data, b_data)
         
         # Create scene with merged composite and a single rune
         merged_node = RuneNode(merged_data, (200, 200))
-        c_node = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (200, 200 + SLAB_SIZE))
+        c_node = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (200, 200 + SLAB_SIZE))
         
         scene.rune_nodes = [merged_node, c_node]
         scene.last_moved_node = c_node
@@ -167,13 +167,13 @@ class LevelSceneSnapTests(unittest.TestCase):
         scene = self._make_scene()
 
         # Create a merged composite rune
-        a_data = RuneData("a", [((0.0, 0.0), (0.5, 0.5))])
-        b_data = RuneData("b", [((0.5, 0.5), (1.0, 1.0))])
+        a_data = RuneData("a", [((0, 0), (50, 50))])
+        b_data = RuneData("b", [((50, 50), (100, 100))])
         merged_data = RuneData.merge(a_data, b_data)
         
         # Create scene with single rune and merged composite
         # The merged composite is the "moved" rune this time
-        c_node = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (200, 200))
+        c_node = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (200, 200))
         merged_node = RuneNode(merged_data, (200, 200 + SLAB_SIZE))
         
         scene.rune_nodes = [c_node, merged_node]
@@ -207,10 +207,10 @@ class LevelSceneSnapTests(unittest.TestCase):
         """Test snapping after a merge, when moving the merged composite."""
         scene = self._make_scene()
 
-        a = RuneNode(RuneData("a", [((0.0, 0.0), (0.5, 0.5))]), (200, 200))
-        b = RuneNode(RuneData("b", [((0.5, 0.5), (1.0, 1.0))]), (200 + SLAB_SIZE, 200))
+        a = RuneNode(RuneData("a", [((0, 0), (50, 50))]), (200, 200))
+        b = RuneNode(RuneData("b", [((50, 50), (100, 100))]), (200 + SLAB_SIZE, 200))
         # c is at a position where it won't overlap with merged node
-        c = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (200, 200 + 2 * SLAB_SIZE))
+        c = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (200, 200 + 2 * SLAB_SIZE))
 
         scene.rune_nodes = [a, b, c]
         scene.last_moved_node = b
@@ -260,13 +260,13 @@ class LevelSceneSnapTests(unittest.TestCase):
         scene = self._make_scene()
 
         # Create a merged composite
-        a_data = RuneData("a", [((0.0, 0.0), (0.5, 0.5))])
-        b_data = RuneData("b", [((0.5, 0.5), (1.0, 1.0))])
+        a_data = RuneData("a", [((0, 0), (50, 50))])
+        b_data = RuneData("b", [((50, 50), (100, 100))])
         merged_data = RuneData.merge(a_data, b_data)
         
         merged_node = RuneNode(merged_data, (200, 200))
         # Position c adjacent to merged (one SLAB_SIZE below)
-        c_node = RuneNode(RuneData("c", [((0.0, 0.0), (1.0, 1.0))]), (200, 200 + SLAB_SIZE))
+        c_node = RuneNode(RuneData("c", [((0, 0), (100, 100))]), (200, 200 + SLAB_SIZE))
         
         scene.rune_nodes = [merged_node, c_node]
         scene.last_moved_node = merged_node
@@ -304,9 +304,9 @@ class LevelSceneWinPermutationTests(unittest.TestCase):
         return LevelScene(pygame.Surface((720, 500)), level)
 
     def test_check_win_true_for_matching_three_rune_permutations(self) -> None:
-        a = RuneData("A", [((0.0, 0.0), (0.5, 0.0))])
-        b = RuneData("B", [((0.0, 0.5), (0.5, 0.5))])
-        c = RuneData("C", [((0.0, 1.0), (0.5, 1.0))])
+        a = RuneData("A", [((0, 0), (50, 0))])
+        b = RuneData("B", [((0, 50), (50, 50))])
+        c = RuneData("C", [((0, 100), (50, 100))])
 
         # Define one canonical target and verify equivalent permutations win.
         target = RuneData.merge(RuneData.merge(a, b), c)
@@ -328,9 +328,9 @@ class LevelSceneWinPermutationTests(unittest.TestCase):
             self.assertTrue(scene.won, f"Permutation {idx} should win")
 
     def test_check_win_false_for_wrong_three_rune_combination(self) -> None:
-        a = RuneData("A", [((0.0, 0.0), (0.5, 0.0))])
-        b = RuneData("B", [((0.0, 0.5), (0.5, 0.5))])
-        c = RuneData("C", [((0.0, 1.0), (0.5, 1.0))])
+        a = RuneData("A", [((0, 0), (50, 0))])
+        b = RuneData("B", [((0, 50), (50, 50))])
+        c = RuneData("C", [((0, 100), (50, 100))])
 
         target = RuneData.attach(RuneData.merge(a, b), c, (1, 0))
         scene = self._make_scene_with_target(target)

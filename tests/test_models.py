@@ -9,8 +9,8 @@ from models import LevelData, RuneData
 
 class RuneDataTests(unittest.TestCase):
     def test_merge_combines_strokes(self) -> None:
-        a = RuneData("a", [((0.0, 0.0), (1.0, 1.0))])
-        b = RuneData("b", [((0.0, 1.0), (1.0, 0.0))])
+        a = RuneData("a", [((0, 0), (100, 100))])
+        b = RuneData("b", [((0, 100), (100, 0))])
 
         merged = RuneData.merge(a, b)
 
@@ -18,8 +18,8 @@ class RuneDataTests(unittest.TestCase):
         self.assertEqual(len(merged.strokes), 2)
 
     def test_attach_offsets_second_rune(self) -> None:
-        a = RuneData("a", [((0.0, 0.0), (0.0, 1.0))])
-        b = RuneData("b", [((0.25, 0.5), (0.75, 0.5))])
+        a = RuneData("a", [((0, 0), (0, 100))])
+        b = RuneData("b", [((25, 50), (75, 50))])
 
         attached = RuneData.attach(a, b, (1, 0))
 
@@ -30,15 +30,15 @@ class RuneDataTests(unittest.TestCase):
         left = RuneData(
             "left",
             [
-                ((0.0, 0.0), (1.0, 0.0)),
-                ((0.5, 0.0), (0.5, 1.0)),
+                ((0, 0), (100, 0)),
+                ((50, 0), (50, 100)),
             ],
         )
         right = RuneData(
             "right",
             [
-                ((0.5, 0.0), (0.5, 1.0)),
-                ((0.0, 0.0), (1.0, 0.0)),
+                ((50, 0), (50, 100)),
+                ((0, 0), (100, 0)),
             ],
         )
 
@@ -49,8 +49,8 @@ class LevelDataRoundTripTests(unittest.TestCase):
     def test_save_and_load_preserves_tutorial_lines(self) -> None:
         level = LevelData(
             level_name="tutorial",
-            starting_runes=[RuneData("a", [((0.0, 0.0), (1.0, 1.0))])],
-            target_rune=RuneData("t", [((0.0, 1.0), (1.0, 0.0))]),
+            starting_runes=[RuneData("a", [((0, 0), (100, 100))])],
+            target_rune=RuneData("t", [((0, 100), (100, 0))]),
             allow_merge=True,
             allow_attach=False,
             tutorial_lines=["Line 1", "Line 2"],
@@ -72,9 +72,9 @@ class ThreeRunePermutationTests(unittest.TestCase):
     def setUp(self) -> None:
         """Set up three base runes for testing."""
         # Simple base runes with distinct strokes
-        self.rune_a = RuneData("A", [((0.0, 0.0), (0.5, 0.0))])
-        self.rune_b = RuneData("B", [((0.0, 0.5), (0.5, 0.5))])
-        self.rune_c = RuneData("C", [((0.0, 1.0), (0.5, 1.0))])
+        self.rune_a = RuneData("A", [((0, 0), (50, 0))])
+        self.rune_b = RuneData("B", [((0, 50), (50, 50))])
+        self.rune_c = RuneData("C", [((0, 100), (50, 100))])
 
     def test_all_merge_permutations(self) -> None:
         """Test that all merge orderings produce results with same stroke count."""

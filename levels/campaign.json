@@ -1,0 +1,304 @@
+{
+  "levels": [
+    {
+      "level_name": "1. Apprentice Merge",
+      "starting_runes": ["alpha", "beta"],
+      "target_rune": {
+        "name": "alpha+beta",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[50, 20], [50, 80]],
+          [[20, 50], [80, 50]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": false,
+      "tutorial_lines": [
+        "Drag one rune so its edge glows green near the other.",
+        "Press M to merge the highlighted pair.",
+        "Match the target rune shown on the right."
+      ]
+    },
+    {
+      "level_name": "2. Guided Attachment",
+      "starting_runes": ["alpha", "gamma"],
+      "target_rune": {
+        "name": "alpha|gamma",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[120, 75], [180, 75]],
+          [[120, 75], [150, 25]],
+          [[180, 75], [150, 25]]
+        ]
+      },
+      "allow_merge": false,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Attach moves one rune to a neighboring grid slab.",
+        "Snap the runes and press A to attach.",
+        "Try different sides until your shape matches the target."
+      ]
+    },
+    {
+      "level_name": "3. Combo Craft",
+      "starting_runes": ["alpha", "beta", "gamma"],
+      "target_rune": {
+        "name": "(alpha+beta)|gamma",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[50, 20], [50, 80]],
+          [[20, 50], [80, 50]],
+          [[20, 175], [80, 175]],
+          [[20, 175], [50, 125]],
+          [[80, 175], [50, 125]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "This level needs more than one operation.",
+        "A common route: merge first, then attach the result.",
+        "You can restart with R if your build drifts off target."
+      ]
+    },
+    {
+      "level_name": "4. Master Rune Forge",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma"],
+      "target_rune": {
+        "name": "master-rune",
+        "strokes": [
+          [[25, 25], [75, 25]],
+          [[25, 25], [25, 75]],
+          [[25, 75], [75, 75]],
+          [[50, -80], [50, -20]],
+          [[20, -50], [80, -50]],
+          [[20, 75], [80, 75]],
+          [[20, 75], [50, 25]],
+          [[80, 75], [50, 25]],
+          [[120, 20], [180, 20]],
+          [[180, 20], [120, 80]],
+          [[120, 80], [180, 80]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Final exam: build sub-shapes, then combine them.",
+        "Use both A and M. Spatial planning matters now.",
+        "Create the master rune to finish the campaign."
+      ]
+    },
+    {
+      "level_name": "5. Pinwheel Junction",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma"],
+      "target_rune": {
+        "name": "pinwheel-junction",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[150, 20], [150, 80]],
+          [[120, 50], [180, 50]],
+          [[20, -25], [80, -25]],
+          [[20, -25], [50, -75]],
+          [[80, -25], [50, -75]],
+          [[-75, 25], [-25, 25]],
+          [[-75, 25], [-75, 75]],
+          [[-75, 75], [-25, 75]]
+        ]
+      },
+      "allow_merge": false,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Attach-only challenge: build a 4-way junction.",
+        "One wrong anchor can mirror an entire branch.",
+        "The extra rune is a decoy; you do not need every piece."
+      ]
+    },
+    {
+      "level_name": "6. Twin Blocks",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "beta"],
+      "target_rune": {
+        "name": "twin-blocks",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[25, 25], [75, 25]],
+          [[25, 25], [25, 75]],
+          [[25, 75], [75, 75]],
+          [[150, 20], [150, 80]],
+          [[120, 50], [180, 50]],
+          [[120, 20], [180, 20]],
+          [[180, 20], [120, 80]],
+          [[120, 80], [180, 80]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Assemble two compact blocks, then bridge them.",
+        "This one rewards merge timing and placement.",
+        "Try building left and right halves separately first."
+      ]
+    },
+    {
+      "level_name": "7. Hanging Column",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "alpha", "gamma"],
+      "target_rune": {
+        "name": "hanging-column",
+        "strokes": [
+          [[20, 75], [80, 75]],
+          [[20, 75], [50, 25]],
+          [[80, 75], [50, 25]],
+          [[20, 120], [80, 120]],
+          [[80, 120], [20, 180]],
+          [[20, 180], [80, 180]],
+          [[25, -80], [75, -80]],
+          [[25, -80], [50, -25]],
+          [[75, -80], [50, -25]],
+          [[150, 20], [150, 80]],
+          [[120, 50], [180, 50]]
+        ]
+      },
+      "allow_merge": false,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Attach-only again, but with long vertical spacing.",
+        "Build the central stack before adding the side arm.",
+        "Small drag errors are amplified in this layout."
+      ]
+    },
+    {
+      "level_name": "8. Winged Gate",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "alpha", "beta", "delta"],
+      "target_rune": {
+        "name": "winged-gate",
+        "strokes": [
+          [[25, 25], [75, 25]],
+          [[25, 25], [25, 75]],
+          [[25, 75], [75, 75]],
+          [[50, -80], [50, -20]],
+          [[20, -50], [80, -50]],
+          [[120, 75], [180, 75]],
+          [[120, 75], [150, 25]],
+          [[180, 75], [150, 25]],
+          [[-75, 20], [-25, 20]],
+          [[-75, 20], [-50, 75]],
+          [[-25, 20], [-50, 75]]
+        ]
+      },
+      "allow_merge": false,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Build a center gate with mirrored wings.",
+        "Attach order matters: left and right are not interchangeable.",
+        "Use the target panel to verify branch orientation."
+      ]
+    },
+    {
+      "level_name": "9. Braided Weave",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "alpha", "beta", "gamma", "delta"],
+      "target_rune": {
+        "name": "braided-weave",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[120, 75], [180, 75]],
+          [[120, 75], [150, 25]],
+          [[180, 75], [150, 25]],
+          [[25, 25], [75, 25]],
+          [[25, 25], [25, 75]],
+          [[25, 75], [75, 75]],
+          [[50, 120], [50, 180]],
+          [[20, 150], [80, 150]],
+          [[-80, 20], [-20, 20]],
+          [[-20, 20], [-80, 80]],
+          [[-80, 80], [-20, 80]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Combine one merged strand with one attached strand.",
+        "This puzzle mixes both operation styles deliberately.",
+        "Treat each strand as a sub-goal before final join."
+      ]
+    },
+    {
+      "level_name": "10. Lattice Crown",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "alpha", "beta", "gamma", "delta", "sigma"],
+      "target_rune": {
+        "name": "lattice-crown",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[150, 20], [150, 80]],
+          [[120, 50], [180, 50]],
+          [[20, 75], [80, 75]],
+          [[20, 75], [50, 25]],
+          [[80, 75], [50, 25]],
+          [[-75, 25], [-25, 25]],
+          [[-75, 25], [-75, 75]],
+          [[-75, 75], [-25, 75]],
+          [[20, -80], [80, -80]],
+          [[80, -80], [20, -20]],
+          [[20, -20], [80, -20]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Form a broad lattice, then cap it from above.",
+        "The final crown piece is easiest when added last.",
+        "Watch for accidental overlaps during central merges."
+      ]
+    },
+    {
+      "level_name": "11. Grand Asymmetry",
+      "starting_runes": ["alpha", "beta", "gamma", "delta", "sigma", "alpha", "beta", "gamma", "delta", "sigma", "alpha"],
+      "target_rune": {
+        "name": "grand-asymmetry",
+        "strokes": [
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[150, 20], [150, 80]],
+          [[120, 50], [180, 50]],
+          [[20, 75], [80, 75]],
+          [[20, 75], [50, 25]],
+          [[80, 75], [50, 25]],
+          [[-75, 25], [-25, 25]],
+          [[-75, 25], [-75, 75]],
+          [[-75, 75], [-25, 75]],
+          [[20, -80], [80, -80]],
+          [[80, -80], [20, -20]],
+          [[20, -20], [80, -20]],
+          [[25, 20], [75, 20]],
+          [[25, 20], [50, 75]],
+          [[75, 20], [50, 75]],
+          [[50, 120], [50, 180]],
+          [[20, 150], [80, 150]],
+          [[-80, 75], [-20, 75]],
+          [[-80, 75], [-50, 25]],
+          [[-20, 75], [-50, 25]]
+        ]
+      },
+      "allow_merge": true,
+      "allow_attach": true,
+      "tutorial_lines": [
+        "Everything learned so far appears in one asymmetric build.",
+        "Sequence and orientation both matter here.",
+        "Build stable cores first, then connect long branches."
+      ]
+    }
+  ]
+}
