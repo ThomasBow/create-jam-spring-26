@@ -121,9 +121,35 @@ class RuneNode:
 
         # Strokes
         colour = TARGET_TINT if not self.interactive else STROKE_COLOUR
+
+        def to_px(pt: Point) -> tuple[int, int]:
+            if self.interactive:
+                return norm_to_px(pt, (x, y))
+
+            # Target preview can contain attached strokes beyond 0..1.
+            # Fit full rune bounds into a slab with small margins.
+            all_points: list[Point] = [p for s in self.rune_data.strokes for p in s]
+            if not all_points:
+                return (x, y)
+
+            min_x = min(p[0] for p in all_points)
+            max_x = max(p[0] for p in all_points)
+            min_y = min(p[1] for p in all_points)
+            max_y = max(p[1] for p in all_points)
+
+            span_x = max(0.001, max_x - min_x)
+            span_y = max(0.001, max_y - min_y)
+            inner = SLAB_SIZE - 16
+            scale = min(inner / span_x, inner / span_y)
+            off_x = x + (SLAB_SIZE - span_x * scale) / 2
+            off_y = y + (SLAB_SIZE - span_y * scale) / 2
+            px = int(off_x + (pt[0] - min_x) * scale)
+            py = int(off_y + (pt[1] - min_y) * scale)
+            return (px, py)
+
         for stroke in self.rune_data.strokes:
-            a = norm_to_px(stroke[0], (x, y))
-            b = norm_to_px(stroke[1], (x, y))
+            a = to_px(stroke[0])
+            b = to_px(stroke[1])
             pygame.draw.line(surface, colour, a, b, STROKE_W)
             # Dots at endpoints
             pygame.draw.circle(surface, colour, a, 3)

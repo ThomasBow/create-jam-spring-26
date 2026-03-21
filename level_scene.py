@@ -70,6 +70,8 @@ class LevelScene:
         target_panel = self._target_panel_rect()
         tx = target_panel.centerx - SLAB_SIZE // 2
         ty = target_panel.y + 44
+        tx = max(target_panel.left + 8, min(tx, target_panel.right - SLAB_SIZE - 8))
+        ty = max(target_panel.top + 28, min(ty, target_panel.bottom - SLAB_SIZE - 28))
         self.target_node = RuneNode(
             self.level_data.target_rune,
             (tx, ty),
@@ -143,58 +145,48 @@ class LevelScene:
             node.highlighted = False
             node.snap_dir = None
 
-        best: tuple[float, int, int, RuneNode, RuneNode, tuple[int, int]] | None = None
+        moved = self.last_moved_node
+        if moved is None or moved not in self.rune_nodes or moved.dragging:
+            self.active_snap = None
+            return
+
+        best_score: tuple[float, int] | None = None
+        best: tuple[RuneNode, RuneNode, tuple[int, int]] | None = None
         dirs: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
         for a in self.rune_nodes:
-            if a.dragging:
+            if a is moved or a.dragging:
                 continue
-            for b in self.rune_nodes:
-                if a is b or b.dragging:
+            b = moved
+            for direction in dirs:
+                dx, dy = direction
+                expected_b = a.position + pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
+                error = (b.position - expected_b).length()
+                if error > SNAP_DIST:
                     continue
-                for direction in dirs:
-                    dx, dy = direction
-                    expected_b = a.position + pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
-                    error = (b.position - expected_b).length()
-                    if error > SNAP_DIST:
-                        continue
 
-                    # Prefer the rune the player just moved to be the attached piece (b).
-                    moved_pref = (
-                        0 if self.last_moved_node is not None and b is self.last_moved_node else 1
-                    )
-                    # When equally close, prefer denser anchor rune to avoid direction flips.
+                # When equally close, prefer denser anchor rune to avoid direction flips.
+                complexity_pref = -len(a.rune_data.strokes)
+                score = (error, complexity_pref)
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best = (a, b, direction)
+
+            # Allow merge if moved rune is intentionally stacked on top of another.
+            if self.level_data.allow_merge:
+                overlap_error = (b.position - a.position).length()
+                if overlap_error <= SNAP_DIST * 0.7:
                     complexity_pref = -len(a.rune_data.strokes)
-                    candidate = (error, moved_pref, complexity_pref, a, b, direction)
-                    if best is None or candidate < best:
-                        best = candidate
-
-                # Allow merge if runes are intentionally stacked on top of each other.
-                if self.level_data.allow_merge:
-                    overlap_error = (b.position - a.position).length()
-                    if overlap_error <= SNAP_DIST * 0.7:
-                        moved_pref = (
-                            0
-                            if self.last_moved_node is not None and b is self.last_moved_node
-                            else 1
-                        )
-                        complexity_pref = -len(a.rune_data.strokes)
-                        candidate = (
-                            overlap_error,
-                            moved_pref,
-                            complexity_pref,
-                            a,
-                            b,
-                            (0, 0),
-                        )
-                        if best is None or candidate < best:
-                            best = candidate
+                    score = (overlap_error, complexity_pref)
+                    if best_score is None or score < best_score:
+                        best_score = score
+                        best = (a, b, (0, 0))
 
         self.active_snap = None
         if best is None:
             return
 
-        _, _, _, anchor, attached, direction = best
+        anchor, attached, direction = best
         self.active_snap = (anchor, attached, direction)
         anchor.highlighted = True
         anchor.snap_dir = direction
