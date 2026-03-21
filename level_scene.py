@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pygame
 from models import LevelData, RuneData
-from rune_node import RuneNode, SLAB_SIZE, SNAP_COLOUR
+from rune_node import RuneNode, SLAB_SIZE, SNAP_COLOUR, SNAP_DIST
 
 BTN_COL = (55, 45, 32)
 BTN_HOV = (85, 70, 48)
@@ -9,6 +9,11 @@ BTN_TXT = (210, 190, 140)
 BORDER = (140, 110, 60)
 WIN_COL = (80, 200, 120)
 PANEL_COL = (18, 15, 10)
+SIDE_PANEL_W = 220
+TOP_MARGIN = 56
+BOTTOM_PANEL_H = 92
+EDGE_ANCHOR_COL = (100, 220, 140)
+EDGE_ATTACHED_COL = (220, 180, 90)
 
 
 class LevelScene:
@@ -35,29 +40,78 @@ class LevelScene:
         self.won = False
         self.rune_nodes: list[RuneNode] = []
         self.target_node: RuneNode | None = None
+        self.active_snap: tuple[RuneNode, RuneNode, tuple[int, int]] | None = None
+        self.last_moved_node: RuneNode | None = None
 
         self._spawn_runes()
 
     # ------------------------------------------------------------------ setup
 
     def _spawn_runes(self) -> None:
-        sw, sh = self.screen.get_size()
-        x = 60
-        y = sh // 2 - SLAB_SIZE // 2
+        workspace = self._workspace_rect()
+        gap = 18
+        cols = max(1, (workspace.width + gap) // (SLAB_SIZE + gap))
+        x = workspace.x
+        y = workspace.y
+        col = 0
 
         for rd in self.level_data.starting_runes:
             node = RuneNode(rd.duplicate(), (x, y))
             self.rune_nodes.append(node)
-            x += SLAB_SIZE + 30
+            col += 1
+            if col >= cols:
+                col = 0
+                x = workspace.x
+                y += SLAB_SIZE + gap
+            else:
+                x += SLAB_SIZE + gap
 
-        # Target — top right, non-interactive, golden tint
-        tx = sw - SLAB_SIZE - 40
-        ty = 60
+        # Target — fixed in the right-hand panel.
+        target_panel = self._target_panel_rect()
+        tx = target_panel.centerx - SLAB_SIZE // 2
+        ty = target_panel.y + 44
         self.target_node = RuneNode(
             self.level_data.target_rune,
             (tx, ty),
             interactive=False,
         )
+
+    def _workspace_rect(self) -> pygame.Rect:
+        sw, sh = self.screen.get_size()
+        return pygame.Rect(
+            12,
+            TOP_MARGIN,
+            sw - SIDE_PANEL_W - 24,
+            sh - TOP_MARGIN - BOTTOM_PANEL_H - 12,
+        )
+
+    def _target_panel_rect(self) -> pygame.Rect:
+        sw, sh = self.screen.get_size()
+        return pygame.Rect(
+            sw - SIDE_PANEL_W + 8,
+            TOP_MARGIN,
+            SIDE_PANEL_W - 16,
+            sh - TOP_MARGIN - 8,
+        )
+
+    def _tutorial_panel_rect(self) -> pygame.Rect:
+        workspace = self._workspace_rect()
+        sh = self.screen.get_height()
+        return pygame.Rect(
+            workspace.x,
+            sh - BOTTOM_PANEL_H,
+            workspace.width,
+            BOTTOM_PANEL_H - 10,
+        )
+
+    def _clamp_node_to_workspace(self, node: RuneNode) -> None:
+        workspace = self._workspace_rect()
+        min_x = workspace.left
+        max_x = workspace.right - SLAB_SIZE
+        min_y = workspace.top
+        max_y = workspace.bottom - SLAB_SIZE
+        node.position.x = min(max(node.position.x, min_x), max_x)
+        node.position.y = min(max(node.position.y, min_y), max_y)
 
     # ------------------------------------------------------------------ events
 
@@ -68,6 +122,9 @@ class LevelScene:
         # Give drag priority to the topmost (last) rune
         for node in reversed(self.rune_nodes):
             if node.handle_event(event):
+                self._clamp_node_to_workspace(node)
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    self.last_moved_node = node
                 break
 
         # On mouse-up, check snap / win
@@ -79,20 +136,70 @@ class LevelScene:
 
     def _check_snap_all(self) -> None:
         """
-        After a drop, look for any rune pair close enough to snap.
-        Offer merge or attach based on level settings.
+        Find the best snap candidate across all rune pairs and highlight only that pair.
+        This avoids operation ambiguity and keeps attach direction stable.
         """
         for node in self.rune_nodes:
-            if node.dragging:
+            node.highlighted = False
+            node.snap_dir = None
+
+        best: tuple[float, int, int, RuneNode, RuneNode, tuple[int, int]] | None = None
+        dirs: list[tuple[int, int]] = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+        for a in self.rune_nodes:
+            if a.dragging:
                 continue
-            result = node.check_snap(self.rune_nodes)
-            if result is None:
-                node.highlighted = False
-                node.snap_dir = None
-                continue
-            other, direction = result
-            node.highlighted = True
-            node.snap_dir = direction
+            for b in self.rune_nodes:
+                if a is b or b.dragging:
+                    continue
+                for direction in dirs:
+                    dx, dy = direction
+                    expected_b = a.position + pygame.Vector2(dx * SLAB_SIZE, dy * SLAB_SIZE)
+                    error = (b.position - expected_b).length()
+                    if error > SNAP_DIST:
+                        continue
+
+                    # Prefer the rune the player just moved to be the attached piece (b).
+                    moved_pref = (
+                        0 if self.last_moved_node is not None and b is self.last_moved_node else 1
+                    )
+                    # When equally close, prefer denser anchor rune to avoid direction flips.
+                    complexity_pref = -len(a.rune_data.strokes)
+                    candidate = (error, moved_pref, complexity_pref, a, b, direction)
+                    if best is None or candidate < best:
+                        best = candidate
+
+                # Allow merge if runes are intentionally stacked on top of each other.
+                if self.level_data.allow_merge:
+                    overlap_error = (b.position - a.position).length()
+                    if overlap_error <= SNAP_DIST * 0.7:
+                        moved_pref = (
+                            0
+                            if self.last_moved_node is not None and b is self.last_moved_node
+                            else 1
+                        )
+                        complexity_pref = -len(a.rune_data.strokes)
+                        candidate = (
+                            overlap_error,
+                            moved_pref,
+                            complexity_pref,
+                            a,
+                            b,
+                            (0, 0),
+                        )
+                        if best is None or candidate < best:
+                            best = candidate
+
+        self.active_snap = None
+        if best is None:
+            return
+
+        _, _, _, anchor, attached, direction = best
+        self.active_snap = (anchor, attached, direction)
+        anchor.highlighted = True
+        anchor.snap_dir = direction
+        attached.highlighted = True
+        attached.snap_dir = (-direction[0], -direction[1])
 
     def _do_merge(self, a: RuneNode, b: RuneNode) -> None:
         merged_data = RuneData.merge(a.rune_data, b.rune_data)
@@ -101,6 +208,7 @@ class LevelScene:
         self.rune_nodes.remove(a)
         self.rune_nodes.remove(b)
         self.rune_nodes.append(new_node)
+        self.last_moved_node = new_node
         self._check_snap_all()
 
     def _do_attach(self, a: RuneNode, b: RuneNode, direction: tuple[int, int]) -> None:
@@ -109,6 +217,7 @@ class LevelScene:
         self.rune_nodes.remove(a)
         self.rune_nodes.remove(b)
         self.rune_nodes.append(new_node)
+        self.last_moved_node = new_node
         self._check_snap_all()
 
     def _check_win(self) -> None:
@@ -152,64 +261,44 @@ class LevelScene:
         ops_txt = self.font.render("  |  ".join(ops), True, (110, 100, 70))
         self.screen.blit(ops_txt, (sw - ops_txt.get_width() - 16, 16))
 
+        # Workspace and target panel framing
+        workspace = self._workspace_rect()
+        target_panel = self._target_panel_rect()
+        pygame.draw.rect(self.screen, (15, 12, 9), workspace, border_radius=8)
+        pygame.draw.rect(self.screen, BORDER, workspace, 1, border_radius=8)
+        pygame.draw.rect(self.screen, (14, 12, 9), target_panel, border_radius=8)
+        pygame.draw.rect(self.screen, BORDER, target_panel, 1, border_radius=8)
+
         # Target label
         if self.target_node:
             lbl = self.font.render("TARGET", True, (160, 130, 60))
-            self.screen.blit(lbl, (int(self.target_node.position.x), 36))
+            self.screen.blit(lbl, (target_panel.x + 12, target_panel.y + 10))
             self.target_node.draw(self.screen)
             self.target_node.draw_label(self.screen, self.font)
 
-        # Divider between target area and workspace
-        pygame.draw.line(
-            self.screen,
-            BORDER,
-            (sw - SLAB_SIZE - 80, 56),
-            (sw - SLAB_SIZE - 80, sh),
-            1,
-        )
-
-        # Tutorial / objective panel
-        panel_x = 12
-        panel_y = 58
-        panel_w = sw - SLAB_SIZE - 110 - panel_x
-        panel_h = 82
-        panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+        # Tutorial / objective panel at bottom to avoid covering gameplay and target.
+        panel_rect = self._tutorial_panel_rect()
         pygame.draw.rect(self.screen, (22, 18, 12), panel_rect, border_radius=8)
         pygame.draw.rect(self.screen, BORDER, panel_rect, 1, border_radius=8)
         if self.level_data.tutorial_lines:
             for i, line in enumerate(self.level_data.tutorial_lines[:3]):
                 line_txt = self.font.render(f"- {line}", True, (165, 145, 98))
-                self.screen.blit(line_txt, (panel_x + 10, panel_y + 8 + i * 22))
+                self.screen.blit(line_txt, (panel_rect.x + 10, panel_rect.y + 8 + i * 22))
         else:
             line_txt = self.font.render(
                 "Align rune edges to highlight then press the operation key.",
                 True,
                 (165, 145, 98),
             )
-            self.screen.blit(line_txt, (panel_x + 10, panel_y + 28))
-
-        # Snap indicators — draw lines between snapping pairs
-        for node in self.rune_nodes:
-            if node.highlighted and node.snap_dir:
-                dx, dy = node.snap_dir
-                # Draw a glowing edge on the snapping side
-                nx, ny = int(node.position.x), int(node.position.y)
-                if dx == 1:
-                    pts = [(nx + SLAB_SIZE, ny), (nx + SLAB_SIZE, ny + SLAB_SIZE)]
-                elif dx == -1:
-                    pts = [(nx, ny), (nx, ny + SLAB_SIZE)]
-                elif dy == 1:
-                    pts = [(nx, ny + SLAB_SIZE), (nx + SLAB_SIZE, ny + SLAB_SIZE)]
-                else:
-                    pts = [(nx, ny), (nx + SLAB_SIZE, ny)]
-                pygame.draw.line(self.screen, SNAP_COLOUR, pts[0], pts[1], 3)
+            self.screen.blit(line_txt, (panel_rect.x + 10, panel_rect.y + 28))
 
         # Rune nodes
         for node in self.rune_nodes:
             node.draw(self.screen)
             node.draw_label(self.screen, self.font)
 
-        # Keyboard hint for snapping runes
+        # Keyboard hint for snapping runes and explicit edge preview.
+        self._draw_attach_edge_preview()
         self._draw_snap_hints()
 
         # Win overlay
@@ -218,17 +307,52 @@ class LevelScene:
 
     def _draw_snap_hints(self) -> None:
         """Show M / A hints near snapping rune pairs."""
-        for node in self.rune_nodes:
-            if not node.highlighted or not node.snap_dir:
-                continue
-            cx = int(node.position.x + SLAB_SIZE // 2)
-            cy = int(node.position.y) - 24
-            if self.level_data.allow_merge:
-                m = self.font.render("[M] Merge", True, SNAP_COLOUR)
-                self.screen.blit(m, (cx - m.get_width() // 2, cy))
-            if self.level_data.allow_attach:
-                a = self.font.render("[A] Attach", True, (180, 220, 140))
-                self.screen.blit(a, (cx - a.get_width() // 2, cy + 16))
+        if self.active_snap is None:
+            return
+        anchor, attached, direction = self.active_snap
+        cx = int((anchor.position.x + attached.position.x) / 2 + SLAB_SIZE // 2)
+        cy = int(min(anchor.position.y, attached.position.y) - 24)
+        if self.level_data.allow_merge:
+            merge_hint = "[M] Merge"
+            if direction == (0, 0):
+                merge_hint = "[M] Merge (overlay)"
+            m = self.font.render(merge_hint, True, SNAP_COLOUR)
+            self.screen.blit(m, (cx - m.get_width() // 2, cy))
+        if self.level_data.allow_attach and direction != (0, 0):
+            a = self.font.render("[A] Attach", True, (180, 220, 140))
+            self.screen.blit(a, (cx - a.get_width() // 2, cy + 16))
+
+    def _edge_segment(
+        self, node: RuneNode, direction: tuple[int, int]
+    ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+        nx, ny = int(node.position.x), int(node.position.y)
+        dx, dy = direction
+        if dx == 1:
+            a, b = (nx + SLAB_SIZE, ny), (nx + SLAB_SIZE, ny + SLAB_SIZE)
+        elif dx == -1:
+            a, b = (nx, ny), (nx, ny + SLAB_SIZE)
+        elif dy == 1:
+            a, b = (nx, ny + SLAB_SIZE), (nx + SLAB_SIZE, ny + SLAB_SIZE)
+        else:
+            a, b = (nx, ny), (nx + SLAB_SIZE, ny)
+        mid = ((a[0] + b[0]) // 2, (a[1] + b[1]) // 2)
+        return a, b, mid
+
+    def _draw_attach_edge_preview(self) -> None:
+        if self.active_snap is None:
+            return
+        anchor, attached, direction = self.active_snap
+        if direction == (0, 0):
+            return
+
+        a0, a1, amid = self._edge_segment(anchor, direction)
+        b0, b1, bmid = self._edge_segment(attached, (-direction[0], -direction[1]))
+
+        pygame.draw.line(self.screen, EDGE_ANCHOR_COL, a0, a1, 4)
+        pygame.draw.line(self.screen, EDGE_ATTACHED_COL, b0, b1, 4)
+        pygame.draw.line(self.screen, SNAP_COLOUR, amid, bmid, 2)
+        pygame.draw.circle(self.screen, EDGE_ANCHOR_COL, amid, 4)
+        pygame.draw.circle(self.screen, EDGE_ATTACHED_COL, bmid, 4)
 
     def _draw_win(self) -> None:
         sw, sh = self.screen.get_size()
@@ -251,19 +375,15 @@ class LevelScene:
         """Called from main loop for M / A keypresses."""
         if self.won:
             return
-        # Find any highlighted pair
-        for node in self.rune_nodes:
-            if not node.highlighted or not node.snap_dir:
-                continue
-            result = node.check_snap(self.rune_nodes)
-            if result is None:
-                continue
-            other, direction = result
-            if key == pygame.K_m and self.level_data.allow_merge:
-                self._do_merge(node, other)
-                self._check_win()
-                return
-            if key == pygame.K_a and self.level_data.allow_attach:
-                self._do_attach(node, other, direction)
-                self._check_win()
-                return
+        if self.active_snap is None:
+            return
+
+        anchor, attached, direction = self.active_snap
+        if key == pygame.K_m and self.level_data.allow_merge:
+            self._do_merge(anchor, attached)
+            self._check_win()
+            return
+        if key == pygame.K_a and self.level_data.allow_attach and direction != (0, 0):
+            self._do_attach(anchor, attached, direction)
+            self._check_win()
+            return
