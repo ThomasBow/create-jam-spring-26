@@ -1,6 +1,6 @@
 from __future__ import annotations
 import pygame
-from models import RuneData, Point
+from models import COORD_SCALE, RuneData, Point
 
 # Colours
 SLAB_BG = (30, 24, 16)
@@ -18,9 +18,12 @@ STROKE_W = 3  # stroke line width
 
 
 def norm_to_px(pt: Point, offset: tuple[int, int] = (0, 0)) -> tuple[int, int]:
-    """Convert a normalised 0..1 point to pixel coords within a slab."""
+    """Convert an integer-index point to pixel coords within a slab."""
     ox, oy = offset
-    return (int(pt[0] * SLAB_SIZE + ox), int(pt[1] * SLAB_SIZE + oy))
+    return (
+        int((pt[0] / COORD_SCALE) * SLAB_SIZE + ox),
+        int((pt[1] / COORD_SCALE) * SLAB_SIZE + oy),
+    )
 
 
 class RuneNode:

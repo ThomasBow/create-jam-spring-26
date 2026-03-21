@@ -2,17 +2,39 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import SupportsFloat
 
 
-# A stroke is two (x, y) points in normalised 0..1 space
-Point = tuple[float, float]
+# Coordinates are stored as integer grid indices.
+# 0..100 maps to the base slab 0.0..1.0 range.
+COORD_SCALE = 100
+
+CoordLike = int | float | SupportsFloat
+Point = tuple[int, int]
 Stroke = tuple[Point, Point]
+
+
+def _to_index(value: CoordLike) -> int:
+    if isinstance(value, int):
+        return value
+    return int(round(float(value) * COORD_SCALE))
+
+
+def _to_point(point: tuple[CoordLike, CoordLike]) -> Point:
+    return (_to_index(point[0]), _to_index(point[1]))
 
 
 @dataclass
 class RuneData:
     name: str
     strokes: list[Stroke] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        # Normalize all points to integer index coordinates.
+        normalized: list[Stroke] = []
+        for p1, p2 in self.strokes:
+            normalized.append((_to_point(p1), _to_point(p2)))
+        self.strokes = normalized
 
     def duplicate(self) -> RuneData:
         return RuneData(name=self.name, strokes=list(self.strokes))
@@ -27,26 +49,25 @@ class RuneData:
         with open(path) as f:
             data = json.load(f)
         strokes: list[Stroke] = [
-            ((s[0][0], s[0][1]), (s[1][0], s[1][1])) for s in data["strokes"]
+            (_to_point((s[0][0], s[0][1])), _to_point((s[1][0], s[1][1])))
+            for s in data["strokes"]
         ]
         return RuneData(name=data["name"], strokes=strokes)
 
     def matches(self, other: RuneData) -> bool:
-        """Compare runes by their strokes, order and endpoint direction independent.
-        Also normalizes stroke positions so attachment order doesn't matter."""
-        # Normalize strokes: ensure endpoints are consistently ordered and translate to canonical position
+        """Compare runes by shape, independent of stroke order or translation."""
         def normalize_strokes(strokes: list[Stroke]) -> set[Stroke]:
             if not strokes:
                 return set()
-            
+
             # Find bounding box
-            all_points = []
+            all_points: list[Point] = []
             for p1, p2 in strokes:
                 all_points.extend([p1, p2])
-            
+
             min_x = min(p[0] for p in all_points)
             min_y = min(p[1] for p in all_points)
-            
+
             # Normalize: translate to origin and ensure consistent point ordering
             normalized = set()
             for stroke in strokes:
@@ -61,7 +82,9 @@ class RuneData:
                     normalized.add((p2_norm, p1_norm))
             return normalized
         
-        return normalize_strokes(self.strokes) == normalize_strokes(other.strokes)
+        self_normalized = normalize_strokes(self.strokes)
+        other_normalized = normalize_strokes(other.strokes)
+        return self_normalized == other_normalized
 
     # --- Operations ---
 
@@ -78,13 +101,13 @@ class RuneData:
         """
         Attach b to an edge of a.
         direction: (1,0)=right, (-1,0)=left, (0,1)=down, (0,-1)=up
-        b's strokes are offset by direction in normalised space.
+        b's strokes are offset by one slab index in the given direction.
         """
         dx, dy = direction
         shifted: list[Stroke] = [
             (
-                (s[0][0] + dx, s[0][1] + dy),
-                (s[1][0] + dx, s[1][1] + dy),
+                (s[0][0] + dx * COORD_SCALE, s[0][1] + dy * COORD_SCALE),
+                (s[1][0] + dx * COORD_SCALE, s[1][1] + dy * COORD_SCALE),
             )
             for s in b.strokes
         ]
@@ -134,7 +157,11 @@ class LevelData:
             return RuneData(
                 name=d["name"],
                 strokes=[
-                    ((s[0][0], s[0][1]), (s[1][0], s[1][1])) for s in d["strokes"]
+                    (
+                        _to_point((s[0][0], s[0][1])),
+                        _to_point((s[1][0], s[1][1])),
+                    )
+                    for s in d["strokes"]
                 ],
             )
 

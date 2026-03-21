@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pygame
 from pathlib import Path
-from models import RuneData, Stroke, Point
+from models import COORD_SCALE, RuneData, Stroke, Point
 from rune_node import (
     SLAB_SIZE,
     SLAB_BG,
@@ -83,17 +83,18 @@ class RuneEditorScene:
     # ------------------------------------------------------------------ helpers
 
     def _snap_to_grid(self, pos: tuple[int, int]) -> Point | None:
-        """Convert screen pos to normalised grid point, or None if outside slab."""
+        """Convert screen pos to integer-index grid point, or None if outside slab."""
         ox, oy = EDITOR_OFFSET
         lx = pos[0] - ox
         ly = pos[1] - oy
         if lx < 0 or ly < 0 or lx > SLAB_SIZE or ly > SLAB_SIZE:
             return None
         step = SLAB_SIZE / GRID_STEPS
-        gx = round(lx / step) / GRID_STEPS
-        gy = round(ly / step) / GRID_STEPS
-        gx = max(0.0, min(1.0, gx))
-        gy = max(0.0, min(1.0, gy))
+        unit = COORD_SCALE // GRID_STEPS
+        gx = int(round(lx / step)) * unit
+        gy = int(round(ly / step)) * unit
+        gx = max(0, min(COORD_SCALE, gx))
+        gy = max(0, min(COORD_SCALE, gy))
         return (gx, gy)
 
     def _show_message(self, text: str, ok: bool = True) -> None:

@@ -133,7 +133,6 @@ class LevelScene:
         # On mouse-up, check snap / win
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self._check_snap_all()
-            self._check_win()
 
     # ------------------------------------------------------------------ logic
 
