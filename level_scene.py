@@ -151,7 +151,7 @@ class LevelScene:
             self.active_snap = None
             return
 
-        best_score: tuple[float, int, int] | None = None
+        best_score: tuple[float, float, int] | None = None
         best: tuple[RuneNode, RuneNode, tuple[int, int]] | None = None
 
         # First priority: check for overlaps/merges (slabs on top of each other)
@@ -167,7 +167,7 @@ class LevelScene:
                     # Prefer denser anchor rune to avoid direction flips.
                     complexity_pref = -len(a.rune_data.strokes)
                     # Use priority 0 for merges (highest priority)
-                    score = (0, overlap_distance, complexity_pref)
+                    score: tuple[float, float, int] = (0, overlap_distance, complexity_pref)
                     if best_score is None or score < best_score:
                         best_score = score
                         best = (a, b, (0, 0))
