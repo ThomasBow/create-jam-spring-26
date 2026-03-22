@@ -15,6 +15,8 @@ Controls:
 """
 
 from __future__ import annotations
+
+import asyncio
 import sys
 import pygame
 from pathlib import Path
@@ -30,7 +32,7 @@ RUNE_DIR = Path("runes")
 LEVEL_DIR = Path("levels")
 
 
-def main() -> None:
+async def main() -> None:
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
     pygame.display.set_caption("Rune Game")
@@ -116,10 +118,11 @@ def main() -> None:
 
         pygame.display.flip()
         clock.tick(FPS)
+        await asyncio.sleep(0)  # ← this is the critical Pygbag hook
 
     pygame.quit()
-    sys.exit()
+    raise SystemExit  # ← instead of sys.exit()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
